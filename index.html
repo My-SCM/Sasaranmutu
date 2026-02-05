@@ -1,536 +1,602 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  LayoutDashboard, 
-  Table as TableIcon, 
-  Settings, 
-  LogOut, 
-  Plus, 
-  Download, 
-  Save, 
-  Trash2, 
-  Search,
-  FileSpreadsheet,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  Menu,
-  X,
-  FileText,
-  Boxes,
-  Github
-} from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer
-} from 'recharts';
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM Dashboard System</title>
+    
+    <!-- 1. Tailwind CSS (Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-// --- 1. DATA & KONFIGURASI ---
-const INITIAL_DATA = [
-  {
-    id: 1,
-    dept: "Supply Chain Management (Warehouse)",
-    sasaran: "Pelaksanaan 5R",
-    target: "100%",
-    resources: "Form Check list",
-    program: "Melaksanakan 5R di area kerja",
-    pic: "EHS Manager, SCM Manager",
-    formula: "(Jumlah Temuan/Hari Kerja) X 100%",
-    freq: "per bulan",
-    m1: "100%", m2: "", m3: "", m4: "", m5: "", m6: "", 
-    m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
-    evidence: ""
-  },
-  {
-    id: 2,
-    dept: "Supply Chain Management",
-    sasaran: "Penggunaan APD",
-    target: "100%",
-    resources: "Peraturan perusahaan, kebijakan K3",
-    program: "Memonitoring Penggunaan APD di area yang ditetapkan",
-    pic: "EHS Manager, All Team SCM",
-    formula: "(Jumlah Temuan/Hari Kerja) X 100%",
-    freq: "per bulan",
-    m1: "100%", m2: "", m3: "", m4: "", m5: "", m6: "", 
-    m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
-    evidence: ""
-  },
-  {
-    id: 3,
-    dept: "Supply Chain Management ( Inventory )",
-    sasaran: "Akurasi Stock Inventory",
-    target: "100%",
-    resources: "Sistem Manajemen Persediaan (Inventory Management System), Pengawasan dan Audit Internal ( STO )",
-    program: "Monitoring pengelolaan inventory",
-    pic: "SCM Manager",
-    formula: "(Stock aktual/stock sistem) X 100%",
-    freq: "per bulan",
-    m1: "100%", m2: "", m3: "", m4: "", m5: "", m6: "", 
-    m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
-    evidence: ""
-  },
-  {
-    id: 4,
-    dept: "Supply Chain Management",
-    sasaran: "Kerusakan Produk FG Akibat Handling",
-    target: "0,50% MAX",
-    resources: "Standard R&D/QC",
-    program: "Monitoring produk reject",
-    pic: "SCM Manager",
-    formula: "Jumlah Temuan Reject/Jumlah Rilis x 100%",
-    freq: "per bulan",
-    m1: "0%", m2: "", m3: "", m4: "", m5: "", m6: "", 
-    m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
-    evidence: ""
-  }
-];
+    <!-- 2. React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 3. Babel (Untuk compile JSX di browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-// --- 2. SUB-KOMPONEN ---
+    <!-- 4. Recharts (Charting Library) -->
+    <!-- Fixed: Using version 2.10.3 which has a more stable UMD build for standalone usage -->
+    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
 
-// Login Component
-const Login = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+    <!-- 5. Icons -->
+    <!-- Removed external lucide-react CDN to prevent ReferenceError. Icons are now inline. -->
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (username === 'admin' && password === 'admin123') {
-      onLogin();
-    } else {
-      setError('Username atau password salah');
-    }
-  };
+    <style>
+        /* Custom Scrollbar untuk tampilan lebih rapi */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
 
-  return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full border border-slate-200">
-        <div className="text-center mb-6">
-          <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Boxes className="text-white w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800">SCM DASHBOARD</h1>
-          <p className="text-slate-500 text-sm">Sistem Sasaran Mutu Supply Chain</p>
-        </div>
+    <script type="text/babel">
+        // --- SETUP IMPORT DARI CDN ---
+        const { useState, useEffect, useMemo } = React;
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-            <input 
-              type="text" 
-              className="w-full px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input 
-              type="password" 
-              className="w-full px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          <button 
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
-          >
-            Masuk
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-};
+        // Destructure Recharts
+        const { 
+            BarChart, 
+            Bar, 
+            XAxis, 
+            YAxis, 
+            CartesianGrid, 
+            Tooltip, 
+            Legend, 
+            ResponsiveContainer 
+        } = Recharts;
 
-// Dashboard View Component
-const DashboardView = ({ data }) => {
-  const parseVal = (val) => {
-    if (!val) return 0;
-    let strVal = String(val).replace(/[a-zA-Z]/g, "").trim().replace(',', '.');
-    if (strVal.includes('%')) return parseFloat(strVal.replace('%', ''));
-    const floatVal = parseFloat(strVal);
-    if (!isNaN(floatVal) && floatVal <= 1 && floatVal > 0) return floatVal * 100;
-    return floatVal;
-  };
+        // --- INTERNAL ICON COMPONENTS (FIXES REFERENCE ERROR) ---
+        const Icon = ({ children, className, size = 24, ...props }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+                {...props}
+            >
+                {children}
+            </svg>
+        );
 
-  const chartData = useMemo(() => {
-    return data.map(item => ({
-      name: item.sasaran.length > 20 ? item.sasaran.substring(0, 20) + '...' : item.sasaran,
-      target: parseVal(item.target),
-      actual: item.m1 ? parseVal(item.m1) : 0 
-    }));
-  }, [data]);
+        const LayoutDashboard = (props) => <Icon {...props}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></Icon>;
+        const TableIcon = (props) => <Icon {...props}><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></Icon>;
+        const Settings = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
+        const LogOut = (props) => <Icon {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
+        const Plus = (props) => <Icon {...props}><path d="M5 12h14"/><path d="M12 5v14"/></Icon>;
+        const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></Icon>;
+        const Save = (props) => <Icon {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></Icon>;
+        const Trash2 = (props) => <Icon {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
+        const Search = (props) => <Icon {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></Icon>;
+        const FileSpreadsheet = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></Icon>;
+        const TrendingUp = (props) => <Icon {...props}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></Icon>;
+        const AlertCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></Icon>;
+        const CheckCircle2 = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></Icon>;
+        const Menu = (props) => <Icon {...props}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></Icon>;
+        const X = (props) => <Icon {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>;
+        const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></Icon>;
+        const Boxes = (props) => <Icon {...props}><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .99 1.74l6 3.44a2 2 0 0 0 1.98 0l6-3.44a2 2 0 0 0 .99-1.74v-3.24a2 2 0 0 0-.97-1.71l-6-3.44a2 2 0 0 0-1.98 0l-6 3.44z"/><path d="m7 16.5-4.74-2.15"/><path d="m7 16.5 4.74-2.15"/><path d="M7 16.5v3.3"/><path d="M10 21.8v-3.3"/><path d="m10 18.5 6-3.44"/><path d="M22 14.63v-3.24a2 2 0 0 0-.97-1.71l-6-3.44a2 2 0 0 0-1.98 0L7.05 9.68"/><path d="m13 9.68 4.74-2.15"/><path d="m13 9.68-4.74-2.15"/><path d="M13 9.68v3.3"/><path d="M16 16.24v-3.3"/></Icon>;
+        const Github = (props) => <Icon {...props}><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></Icon>;
 
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">Total Item KPI</p>
-              <h3 className="text-3xl font-bold text-slate-800">{data.length}</h3>
-            </div>
-            <div className="bg-blue-100 p-3 rounded-full text-blue-600">
-              <FileSpreadsheet size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">Rata-rata Target</p>
-              <h3 className="text-3xl font-bold text-slate-800">
-                {(chartData.reduce((acc, curr) => acc + curr.target, 0) / (data.length || 1)).toFixed(1)}%
-              </h3>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full text-green-600">
-              <TrendingUp size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">Realisasi (Januari)</p>
-              <h3 className="text-3xl font-bold text-slate-800">
-                 {(chartData.reduce((acc, curr) => acc + curr.actual, 0) / (data.length || 1)).toFixed(1)}%
-              </h3>
-            </div>
-            <div className="bg-purple-100 p-3 rounded-full text-purple-600">
-              <AlertCircle size={24} />
-            </div>
-          </div>
-        </div>
-      </div>
+        // --- 1. DATA & KONFIGURASI ---
+        const INITIAL_DATA = [
+            {
+                id: 1,
+                dept: "Supply Chain Management (Warehouse)",
+                sasaran: "Pelaksanaan 5R",
+                target: "100%",
+                resources: "Form Check list",
+                program: "Melaksanakan 5R di area kerja",
+                pic: "EHS Manager, SCM Manager",
+                formula: "(Jumlah Temuan/Hari Kerja) X 100%",
+                freq: "per bulan",
+                m1: "100%", m2: "", m3: "", m4: "", m5: "", m6: "", 
+                m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
+                evidence: ""
+            },
+            {
+                id: 2,
+                dept: "Supply Chain Management",
+                sasaran: "Penggunaan APD",
+                target: "100%",
+                resources: "Peraturan perusahaan, kebijakan K3",
+                program: "Memonitoring Penggunaan APD di area yang ditetapkan",
+                pic: "EHS Manager, All Team SCM",
+                formula: "(Jumlah Temuan/Hari Kerja) X 100%",
+                freq: "per bulan",
+                m1: "100%", m2: "", m3: "", m4: "", m5: "", m6: "", 
+                m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
+                evidence: ""
+            },
+            {
+                id: 3,
+                dept: "Supply Chain Management ( Inventory )",
+                sasaran: "Akurasi Stock Inventory",
+                target: "100%",
+                resources: "Sistem Manajemen Persediaan (Inventory Management System), Pengawasan dan Audit Internal ( STO )",
+                program: "Monitoring pengelolaan inventory",
+                pic: "SCM Manager",
+                formula: "(Stock aktual/stock sistem) X 100%",
+                freq: "per bulan",
+                m1: "100%", m2: "", m3: "", m4: "", m5: "", m6: "", 
+                m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
+                evidence: ""
+            },
+            {
+                id: 4,
+                dept: "Supply Chain Management",
+                sasaran: "Kerusakan Produk FG Akibat Handling",
+                target: "0,50% MAX",
+                resources: "Standard R&D/QC",
+                program: "Monitoring produk reject",
+                pic: "SCM Manager",
+                formula: "Jumlah Temuan Reject/Jumlah Rilis x 100%",
+                freq: "per bulan",
+                m1: "0%", m2: "", m3: "", m4: "", m5: "", m6: "", 
+                m7: "", m8: "", m9: "", m10: "", m11: "", m12: "",
+                evidence: ""
+            }
+        ];
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h3 className="text-lg font-bold text-slate-700 mb-6">Perbandingan Target vs Realisasi</h3>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={true} />
-              <XAxis type="number" domain={[0, 110]} />
-              <YAxis dataKey="name" type="category" width={150} tick={{fontSize: 12}} />
-              <Tooltip cursor={{fill: 'transparent'}} />
-              <Legend />
-              <Bar dataKey="target" name="Target (%)" fill="#e2e8f0" barSize={20} radius={[0, 4, 4, 0]} />
-              <Bar dataKey="actual" name="Realisasi (%)" fill="#3b82f6" barSize={20} radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  );
-};
+        // --- 2. SUB-KOMPONEN ---
 
-// Data Table View Component (Improved Layout & Sticky Headers)
-const DataTableView = ({ data }) => {
-  const [filter, setFilter] = useState('');
-  
-  const filteredData = data.filter(item => {
-    return item.sasaran.toLowerCase().includes(filter.toLowerCase()) || 
-           item.pic.toLowerCase().includes(filter.toLowerCase());
-  });
+        // Login Component
+        const Login = ({ onLogin }) => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
 
-  const exportToExcel = () => {
-    if (!window.XLSX) { alert("Library Excel belum siap."); return; }
-    
-    const exportData = [
-      ["PENCAPAIAN SASARAN MUTU, K3 DAN LINGKUNGAN (TAHUN 2025)"],
-      ["Unit/Fungsi:", "Supply Chain Management"],
-      ["Periode:", "2025"],
-      [],
-      ["No", "Sub-Unit", "Sasaran Mutu", "Target", "Sumber Daya", "Program Kerja", "Penanggung Jawab", "Formula", "Freq", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Rekaman"]
-    ];
-    
-    filteredData.forEach((item, index) => {
-      exportData.push([
-        index + 1, item.dept, item.sasaran, item.target, item.resources, item.program, item.pic, item.formula, item.freq,
-        item.m1, item.m2, item.m3, item.m4, item.m5, item.m6, item.m7, item.m8, item.m9, item.m10, item.m11, item.m12, item.evidence
-      ]);
-    });
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (username === 'admin' && password === 'admin123') {
+                    onLogin();
+                } else {
+                    setError('Username atau password salah');
+                }
+            };
 
-    const wb = window.XLSX.utils.book_new();
-    const ws = window.XLSX.utils.aoa_to_sheet(exportData);
-    ws['!cols'] = [{wch: 5}, {wch: 35}, {wch: 40}, {wch: 15}, {wch: 25}, {wch: 30}, {wch: 25}, {wch: 25}, {wch: 10}];
-    window.XLSX.utils.book_append_sheet(wb, ws, "SCM 2025");
-    window.XLSX.writeFile(wb, "Sasaran_Mutu_SCM_2025.xlsx");
-  };
+            return (
+                <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+                    <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full border border-slate-200">
+                        <div className="text-center mb-6">
+                            <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Boxes className="text-white w-8 h-8" />
+                            </div>
+                            <h1 className="text-2xl font-bold text-slate-800">SCM DASHBOARD</h1>
+                            <p className="text-slate-500 text-sm">Sistem Sasaran Mutu Supply Chain</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="admin"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                <input 
+                                    type="password" 
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                            <button 
+                                type="submit"
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
+                            >
+                                Masuk
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
 
-  const exportToPDF = () => {
-    if (!window.jspdf) { alert("Library PDF belum siap."); return; }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
+        // Dashboard View Component
+        const DashboardView = ({ data }) => {
+            const parseVal = (val) => {
+                if (!val) return 0;
+                let strVal = String(val).replace(/[a-zA-Z]/g, "").trim().replace(',', '.');
+                if (strVal.includes('%')) return parseFloat(strVal.replace('%', ''));
+                const floatVal = parseFloat(strVal);
+                if (!isNaN(floatVal) && floatVal <= 1 && floatVal > 0) return floatVal * 100;
+                return floatVal;
+            };
 
-    doc.setFontSize(14);
-    doc.text("PENCAPAIAN SASARAN MUTU - SUPPLY CHAIN MANAGEMENT", 14, 15);
-    doc.setFontSize(10);
-    doc.text("Periode: 2025", 14, 22);
+            const chartData = useMemo(() => {
+                return data.map(item => ({
+                    name: item.sasaran.length > 20 ? item.sasaran.substring(0, 20) + '...' : item.sasaran,
+                    target: parseVal(item.target),
+                    actual: item.m1 ? parseVal(item.m1) : 0 
+                }));
+            }, [data]);
 
-    const tableColumn = ["No", "Sub-Unit", "Sasaran Mutu", "Target", "PIC", "Realisasi (Jan-Des)", "Rekaman"];
-    const tableRows = filteredData.map((item, index) => {
-      const months = [item.m1, item.m2, item.m3, item.m4, item.m5, item.m6, item.m7, item.m8, item.m9, item.m10, item.m11, item.m12]
-        .filter(m => m && m !== "").join(", ");
-      return [index + 1, item.dept, item.sasaran, item.target, item.pic, months || "-", item.evidence];
-    });
+            return (
+                <div className="space-y-6 h-full overflow-auto p-1">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Total Item KPI</p>
+                                    <h3 className="text-3xl font-bold text-slate-800">{data.length}</h3>
+                                </div>
+                                <div className="bg-blue-100 p-3 rounded-full text-blue-600">
+                                    <FileSpreadsheet size={24} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-green-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Rata-rata Target</p>
+                                    <h3 className="text-3xl font-bold text-slate-800">
+                                        {(chartData.reduce((acc, curr) => acc + curr.target, 0) / (data.length || 1)).toFixed(1)}%
+                                    </h3>
+                                </div>
+                                <div className="bg-green-100 p-3 rounded-full text-green-600">
+                                    <TrendingUp size={24} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Realisasi (Januari)</p>
+                                    <h3 className="text-3xl font-bold text-slate-800">
+                                        {(chartData.reduce((acc, curr) => acc + curr.actual, 0) / (data.length || 1)).toFixed(1)}%
+                                    </h3>
+                                </div>
+                                <div className="bg-purple-100 p-3 rounded-full text-purple-600">
+                                    <AlertCircle size={24} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    doc.autoTable({
-      head: [tableColumn], body: tableRows, startY: 30, theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185] }, styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 65 }, 3: { cellWidth: 20 }, 4: { cellWidth: 30 }, 5: { cellWidth: 60 }, 6: { cellWidth: 30 } }
-    });
-    doc.save("Laporan_SCM_2025.pdf");
-  };
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 className="text-lg font-bold text-slate-700 mb-6">Perbandingan Target vs Realisasi</h3>
+                        <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={true} />
+                                    <XAxis type="number" domain={[0, 110]} />
+                                    <YAxis dataKey="name" type="category" width={150} tick={{fontSize: 12}} />
+                                    <Tooltip cursor={{fill: 'transparent'}} />
+                                    <Legend />
+                                    <Bar dataKey="target" name="Target (%)" fill="#e2e8f0" barSize={20} radius={[0, 4, 4, 0]} />
+                                    <Bar dataKey="actual" name="Realisasi (%)" fill="#3b82f6" barSize={20} radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-150px)]">
-      {/* Controls */}
-      <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row gap-4 justify-between bg-slate-50 shrink-0">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-          <input type="text" placeholder="Cari indikator..." className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value={filter} onChange={(e) => setFilter(e.target.value)} />
-        </div>
-        <div className="flex gap-2">
-          <button onClick={exportToPDF} className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm text-sm"><FileText size={16} /><span>PDF</span></button>
-          <button onClick={exportToExcel} className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm text-sm"><Download size={16} /><span>Excel</span></button>
-        </div>
-      </div>
+        // Data Table View Component
+        const DataTableView = ({ data }) => {
+            const [filter, setFilter] = useState('');
+            
+            const filteredData = data.filter(item => {
+                return item.sasaran.toLowerCase().includes(filter.toLowerCase()) || 
+                       item.pic.toLowerCase().includes(filter.toLowerCase());
+            });
 
-      {/* Scrollable Table Area */}
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-sm text-left text-slate-600 border-collapse">
-          <thead className="text-xs text-slate-700 uppercase bg-slate-100">
-            <tr>
-              {/* Sticky Top-Left Corner */}
-              <th className="px-4 py-3 sticky left-0 top-0 z-30 bg-slate-100 border-r border-b border-slate-300 shadow-sm w-12 text-center">No</th>
-              
-              {/* Sticky Top Headers */}
-              <th className="px-4 py-3 sticky top-0 z-20 bg-slate-100 border-b border-slate-300 min-w-[200px] whitespace-nowrap">Unit/Fungsi</th>
-              <th className="px-4 py-3 sticky top-0 z-20 bg-slate-100 border-b border-slate-300 min-w-[300px] whitespace-nowrap">Sasaran Mutu</th>
-              <th className="px-4 py-3 sticky top-0 z-20 bg-slate-100 border-b border-slate-300 min-w-[100px] whitespace-nowrap">Target</th>
-              <th className="px-4 py-3 sticky top-0 z-20 bg-slate-100 border-b border-slate-300 min-w-[150px] whitespace-nowrap">PIC</th>
-              <th className="px-4 py-3 sticky top-0 z-20 bg-slate-100 border-b border-slate-300 text-center whitespace-nowrap">Freq</th>
-              
-              {/* Months Headers */}
-              {[...Array(12)].map((_, i) => (
-                <th key={i} className="px-2 py-3 sticky top-0 z-20 bg-slate-100 border-b border-l border-slate-300 text-center min-w-[60px] whitespace-nowrap">{i+1}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item, index) => (
-                <tr key={item.id} className="group hover:bg-blue-50 transition-colors even:bg-slate-50">
-                  {/* Sticky Left Column */}
-                  <td className="px-4 py-3 sticky left-0 border-r border-b border-slate-200 font-medium z-10 text-center bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                    {index + 1}
-                  </td>
-                  
-                  {/* Data Columns */}
-                  <td className="px-4 py-3 border-b border-slate-200 font-semibold text-slate-700 whitespace-nowrap">{item.dept}</td>
-                  <td className="px-4 py-3 border-b border-slate-200 whitespace-nowrap max-w-[300px] truncate" title={item.sasaran}>{item.sasaran}</td>
-                  <td className="px-4 py-3 border-b border-slate-200 text-blue-600 font-medium whitespace-nowrap">{item.target}</td>
-                  <td className="px-4 py-3 border-b border-slate-200 whitespace-nowrap">{item.pic}</td>
-                  <td className="px-4 py-3 border-b border-slate-200 text-center whitespace-nowrap">{item.freq}</td>
-                  
-                  {/* Months Data */}
-                  {[...Array(12)].map((_, i) => (
-                    <td key={i} className="px-2 py-3 border-b border-l border-slate-200 text-center text-xs whitespace-nowrap">{item[`m${i+1}`]}</td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              <tr><td colSpan="18" className="px-6 py-12 text-center text-slate-400"><div className="flex flex-col items-center justify-center"><AlertCircle size={48} className="mb-2 opacity-50" /><p>Tidak ada data ditemukan</p></div></td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
+            const exportToExcel = () => {
+                if (!window.XLSX) { alert("Library Excel belum siap. Tunggu sebentar."); return; }
+                
+                const exportData = [
+                    ["PENCAPAIAN SASARAN MUTU, K3 DAN LINGKUNGAN (TAHUN 2025)"],
+                    ["Unit/Fungsi:", "Supply Chain Management"],
+                    ["Periode:", "2025"],
+                    [],
+                    ["No", "Sub-Unit", "Sasaran Mutu", "Target", "Sumber Daya", "Program Kerja", "Penanggung Jawab", "Formula", "Freq", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Rekaman"]
+                ];
+                
+                filteredData.forEach((item, index) => {
+                    exportData.push([
+                        index + 1, item.dept, item.sasaran, item.target, item.resources, item.program, item.pic, item.formula, item.freq,
+                        item.m1, item.m2, item.m3, item.m4, item.m5, item.m6, item.m7, item.m8, item.m9, item.m10, item.m11, item.m12, item.evidence
+                    ]);
+                });
 
-// Admin Panel Component
-const AdminPanel = ({ data, setData }) => {
-  const [formData, setFormData] = useState({
-    id: null, dept: '', sasaran: '', target: '', resources: '', program: '', pic: '', formula: '', freq: 'per bulan',
-    m1: '', m2: '', m3: '', m4: '', m5: '', m6: '', m7: '', m8: '', m9: '', m10: '', m11: '', m12: '', evidence: ''
-  });
-  const [isEditing, setIsEditing] = useState(false);
+                const wb = window.XLSX.utils.book_new();
+                const ws = window.XLSX.utils.aoa_to_sheet(exportData);
+                ws['!cols'] = [{wch: 5}, {wch: 35}, {wch: 40}, {wch: 15}, {wch: 25}, {wch: 30}, {wch: 25}, {wch: 25}, {wch: 10}];
+                window.XLSX.utils.book_append_sheet(wb, ws, "SCM 2025");
+                window.XLSX.writeFile(wb, "Sasaran_Mutu_SCM_2025.xlsx");
+            };
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+            const exportToPDF = () => {
+                if (!window.jspdf) { alert("Library PDF belum siap. Tunggu sebentar."); return; }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isEditing) {
-      setData(data.map(item => (item.id === formData.id ? formData : item)));
-      setIsEditing(false);
-    } else {
-      setData([...data, { ...formData, id: Date.now() }]);
-    }
-    resetForm();
-  };
+                doc.setFontSize(14);
+                doc.text("PENCAPAIAN SASARAN MUTU - SUPPLY CHAIN MANAGEMENT", 14, 15);
+                doc.setFontSize(10);
+                doc.text("Periode: 2025", 14, 22);
 
-  const handleEdit = (item) => {
-    setFormData(item);
-    setIsEditing(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+                const tableColumn = ["No", "Sub-Unit", "Sasaran Mutu", "Target", "PIC", "Realisasi (Jan-Des)", "Rekaman"];
+                const tableRows = filteredData.map((item, index) => {
+                    const months = [item.m1, item.m2, item.m3, item.m4, item.m5, item.m6, item.m7, item.m8, item.m9, item.m10, item.m11, item.m12]
+                        .filter(m => m && m !== "").join(", ");
+                    return [index + 1, item.dept, item.sasaran, item.target, item.pic, months || "-", item.evidence];
+                });
 
-  const handleDelete = (id) => {
-    if (window.confirm("Hapus data ini?")) setData(data.filter(item => item.id !== id));
-  };
+                doc.autoTable({
+                    head: [tableColumn], body: tableRows, startY: 30, theme: 'grid',
+                    headStyles: { fillColor: [41, 128, 185] }, styles: { fontSize: 8, cellPadding: 2 },
+                    columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 65 }, 3: { cellWidth: 20 }, 4: { cellWidth: 30 }, 5: { cellWidth: 60 }, 6: { cellWidth: 30 } }
+                });
+                doc.save("Laporan_SCM_2025.pdf");
+            };
 
-  const resetForm = () => {
-    setFormData({
-      id: null, dept: '', sasaran: '', target: '', resources: '', program: '', pic: '', formula: '', freq: 'per bulan',
-      m1: '', m2: '', m3: '', m4: '', m5: '', m6: '', m7: '', m8: '', m9: '', m10: '', m11: '', m12: '', evidence: ''
-    });
-    setIsEditing(false);
-  };
+            return (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
+                    <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row gap-4 justify-between bg-slate-50 shrink-0">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                            <input type="text" placeholder="Cari indikator..." className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value={filter} onChange={(e) => setFilter(e.target.value)} />
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={exportToPDF} className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm text-sm"><FileText size={16} /><span>PDF</span></button>
+                            <button onClick={exportToExcel} className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm text-sm"><Download size={16} /><span>Excel</span></button>
+                        </div>
+                    </div>
 
-  return (
-    <div className="space-y-8">
-      <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold text-slate-800 flex items-center">
-            {isEditing ? <Settings className="mr-2 text-blue-600" /> : <Plus className="mr-2 text-green-600" />}
-            {isEditing ? "Edit Data KPI" : "Tambah KPI Baru"}
-          </h3>
-          {isEditing && <button onClick={resetForm} className="text-sm text-red-500 hover:text-red-700 underline">Batal Edit</button>}
-        </div>
+                    <div className="flex-1 overflow-auto bg-slate-50 relative">
+                        <table className="w-full text-sm text-left text-slate-600 border-separate border-spacing-0">
+                            <thead className="text-xs text-slate-700 uppercase bg-slate-100">
+                                <tr>
+                                    <th className="px-4 py-3 sticky left-0 top-0 z-40 bg-slate-100 border-r border-b border-slate-300 shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)] w-14 text-center">No</th>
+                                    <th className="px-4 py-3 sticky top-0 z-30 bg-slate-100 border-b border-slate-300 min-w-[200px] whitespace-nowrap">Unit/Fungsi</th>
+                                    <th className="px-4 py-3 sticky top-0 z-30 bg-slate-100 border-b border-slate-300 min-w-[300px] whitespace-nowrap">Sasaran Mutu</th>
+                                    <th className="px-4 py-3 sticky top-0 z-30 bg-slate-100 border-b border-slate-300 min-w-[100px] whitespace-nowrap">Target</th>
+                                    <th className="px-4 py-3 sticky top-0 z-30 bg-slate-100 border-b border-slate-300 min-w-[150px] whitespace-nowrap">PIC</th>
+                                    <th className="px-4 py-3 sticky top-0 z-30 bg-slate-100 border-b border-slate-300 text-center whitespace-nowrap">Freq</th>
+                                    {[...Array(12)].map((_, i) => (
+                                        <th key={i} className="px-2 py-3 sticky top-0 z-30 bg-slate-100 border-b border-l border-slate-300 text-center min-w-[60px] whitespace-nowrap">{i+1}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredData.length > 0 ? (
+                                    filteredData.map((item, index) => (
+                                        <tr key={item.id} className="group hover:bg-blue-50 transition-colors bg-white">
+                                            <td className="px-4 py-3 sticky left-0 border-r border-b border-slate-200 font-medium z-20 text-center bg-white group-hover:bg-blue-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                                                {index + 1}
+                                            </td>
+                                            <td className="px-4 py-3 border-b border-slate-200 font-semibold text-slate-700 whitespace-nowrap">{item.dept}</td>
+                                            <td className="px-4 py-3 border-b border-slate-200 whitespace-nowrap max-w-[300px] truncate" title={item.sasaran}>{item.sasaran}</td>
+                                            <td className="px-4 py-3 border-b border-slate-200 text-blue-600 font-medium whitespace-nowrap">{item.target}</td>
+                                            <td className="px-4 py-3 border-b border-slate-200 whitespace-nowrap">{item.pic}</td>
+                                            <td className="px-4 py-3 border-b border-slate-200 text-center whitespace-nowrap">{item.freq}</td>
+                                            {[...Array(12)].map((_, i) => (
+                                                <td key={i} className="px-2 py-3 border-b border-l border-slate-200 text-center text-xs whitespace-nowrap">{item[`m${i+1}`]}</td>
+                                            ))}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr><td colSpan="18" className="px-6 py-12 text-center text-slate-400"><div className="flex flex-col items-center justify-center"><AlertCircle size={48} className="mb-2 opacity-50" /><p>Tidak ada data ditemukan</p></div></td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Unit / Fungsi</label><input name="dept" value={formData.dept} onChange={handleChange} required className="w-full p-2 border rounded" placeholder="SCM Warehouse" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">PIC</label><input name="pic" value={formData.pic} onChange={handleChange} required className="w-full p-2 border rounded" /></div>
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Sasaran Mutu</label><textarea name="sasaran" value={formData.sasaran} onChange={handleChange} required className="w-full p-2 border rounded" rows="2"></textarea></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Target</label><input name="target" value={formData.target} onChange={handleChange} required className="w-full p-2 border rounded" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Sumber Daya</label><input name="resources" value={formData.resources} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Program Kerja</label><input name="program" value={formData.program} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Formula</label><input name="formula" value={formData.formula} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Frekuensi</label>
-              <select name="freq" value={formData.freq} onChange={handleChange} className="w-full p-2 border rounded bg-white">
-                <option value="per bulan">per bulan</option>
-                <option value="per 3 bulan">per 3 bulan</option>
-                <option value="per tahun">per tahun</option>
-              </select>
-            </div>
-          </div>
-          <div className="border-t border-slate-200 pt-4">
-            <h4 className="text-sm font-bold text-slate-600 mb-3">Realisasi Bulanan</h4>
-            <div className="grid grid-cols-6 gap-2">
-               {[...Array(12)].map((_, i) => (
-                 <div key={i}>
-                   <label className="text-xs text-slate-500 block mb-1">Bln {i+1}</label>
-                   <input name={`m${i+1}`} value={formData[`m${i+1}`]} onChange={handleChange} className="w-full text-center text-sm p-1 border rounded" />
-                 </div>
-               ))}
-            </div>
-          </div>
-          <div className="flex justify-end pt-4">
-             <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg flex items-center shadow-lg"><Save size={18} className="mr-2" />{isEditing ? "Simpan Perubahan" : "Simpan Data"}</button>
-          </div>
-        </form>
-      </div>
-      <div className="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
-        <div className="p-4 bg-slate-50 border-b border-slate-200"><h3 className="font-bold text-slate-700">Database KPI</h3></div>
-        <div className="overflow-x-auto max-h-[500px]">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-700 uppercase bg-slate-100">
-              <tr>
-                <th className="px-4 py-3">Sasaran</th><th className="px-4 py-3">Target</th><th className="px-4 py-3">PIC</th><th className="px-4 py-3 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((item) => (
-                <tr key={item.id} className="border-b hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium">{item.sasaran}</td><td className="px-4 py-3">{item.target}</td><td className="px-4 py-3">{item.pic}</td>
-                  <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => handleEdit(item)} className="text-blue-600 border border-blue-200 px-2 py-1 rounded bg-blue-50 text-xs">Edit</button>
-                    <button onClick={() => handleDelete(item.id)} className="text-red-600 border border-red-200 px-2 py-1 rounded bg-red-50 text-xs">Hapus</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-};
+        // Admin Panel Component
+        const AdminPanel = ({ data, setData }) => {
+            const [formData, setFormData] = useState({
+                id: null, dept: '', sasaran: '', target: '', resources: '', program: '', pic: '', formula: '', freq: 'per bulan',
+                m1: '', m2: '', m3: '', m4: '', m5: '', m6: '', m7: '', m8: '', m9: '', m10: '', m11: '', m12: '', evidence: ''
+            });
+            const [isEditing, setIsEditing] = useState(false);
 
-// --- 3. MAIN APP COMPONENT ---
-// Dipindahkan ke bawah agar semua sub-komponen sudah terdefinisi saat dipanggil
-export default function App() {
-  const [user, setUser] = useState(null); 
-  const [view, setView] = useState('dashboard');
-  const [data, setData] = useState(INITIAL_DATA);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+            const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // Load External Libs
-  useEffect(() => {
-    const scripts = [
-      "https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"
-    ];
-    scripts.forEach(src => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.async = true;
-      document.body.appendChild(script);
-    });
-  }, []);
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (isEditing) {
+                    setData(data.map(item => (item.id === formData.id ? formData : item)));
+                    setIsEditing(false);
+                } else {
+                    setData([...data, { ...formData, id: Date.now() }]);
+                }
+                resetForm();
+            };
 
-  const handleLogout = () => { setUser(null); setView('dashboard'); };
+            const handleEdit = (item) => {
+                setFormData(item);
+                setIsEditing(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'data', label: 'Data Mentah', icon: TableIcon },
-    { id: 'admin', label: 'Input Admin', icon: Settings },
-  ];
+            const handleDelete = (id) => {
+                if (window.confirm("Hapus data ini?")) setData(data.filter(item => item.id !== id));
+            };
 
-  if (!user && view === 'admin') return <Login onLogin={() => setUser('admin')} />;
+            const resetForm = () => {
+                setFormData({
+                    id: null, dept: '', sasaran: '', target: '', resources: '', program: '', pic: '', formula: '', freq: 'per bulan',
+                    m1: '', m2: '', m3: '', m4: '', m5: '', m6: '', m7: '', m8: '', m9: '', m10: '', m11: '', m12: '', evidence: ''
+                });
+                setIsEditing(false);
+            };
 
-  return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col shadow-xl z-20`}>
-        <div className="p-4 flex items-center justify-between border-b border-slate-700">
-          {isSidebarOpen ? <div className="flex items-center space-x-2"><div className="bg-blue-500 p-1 rounded"><Boxes size={20} /></div><span className="font-bold text-lg tracking-tight truncate">SCM SYSTEM</span></div> : <div className="mx-auto bg-blue-500 p-2 rounded"><Boxes size={20} /></div>}
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white">{isSidebarOpen ? <X size={18} /> : <Menu size={18} />}</button>
-        </div>
-        <nav className="flex-1 py-6 px-3 space-y-2">
-          {navItems.map((item) => (
-            <button key={item.id} onClick={() => { if(item.id === 'admin' && !user) { setView('admin'); } else { setView(item.id); } }} className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors ${view === item.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><item.icon size={20} />{isSidebarOpen && <span>{item.label}</span>}</button>
-          ))}
-          <a href="https://github.com/username/scm-dashboard" target="_blank" rel="noopener noreferrer" className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"><Github size={20} />{isSidebarOpen && <span>GitHub Repo</span>}</a>
-        </nav>
-        <div className="p-4 border-t border-slate-700">
-          {user ? <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition-colors"><LogOut size={20} />{isSidebarOpen && <span>Keluar</span>}</button> : <div className="text-xs text-center text-slate-500">{isSidebarOpen && "Guest Mode"}</div>}
-        </div>
-      </aside>
-      <main className="flex-1 overflow-auto relative">
-        <header className="bg-white shadow-sm p-4 sticky top-0 z-10 flex justify-between items-center">
-          <div><h2 className="text-xl font-semibold text-slate-800">{view === 'dashboard' && 'Dashboard SCM'}{view === 'data' && 'Data Mentah SCM'}{view === 'admin' && 'Panel Admin SCM'}</h2><p className="text-xs text-slate-500">Supply Chain Management - Sasaran Mutu</p></div>
-          <div className="flex items-center space-x-4"><span className="text-sm text-slate-500">Periode: 2025</span>{user && <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full flex items-center"><CheckCircle2 size={12} className="mr-1" /> Admin Logged In</span>}</div>
-        </header>
-        <div className="p-6">
-          {view === 'dashboard' && <DashboardView data={data} />}
-          {view === 'data' && <DataTableView data={data} />}
-          {view === 'admin' && <AdminPanel data={data} setData={setData} />}
-        </div>
-      </main>
-    </div>
-  );
-}
+            return (
+                <div className="space-y-8 h-full overflow-auto p-1">
+                    <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center">
+                                {isEditing ? <Settings className="mr-2 text-blue-600" /> : <Plus className="mr-2 text-green-600" />}
+                                {isEditing ? "Edit Data KPI" : "Tambah KPI Baru"}
+                            </h3>
+                            {isEditing && <button onClick={resetForm} className="text-sm text-red-500 hover:text-red-700 underline">Batal Edit</button>}
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label className="block text-sm font-medium text-slate-700 mb-1">Unit / Fungsi</label><input name="dept" value={formData.dept} onChange={handleChange} required className="w-full p-2 border rounded" placeholder="SCM Warehouse" /></div>
+                                <div><label className="block text-sm font-medium text-slate-700 mb-1">PIC</label><input name="pic" value={formData.pic} onChange={handleChange} required className="w-full p-2 border rounded" /></div>
+                                <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Sasaran Mutu</label><textarea name="sasaran" value={formData.sasaran} onChange={handleChange} required className="w-full p-2 border rounded" rows="2"></textarea></div>
+                                <div><label className="block text-sm font-medium text-slate-700 mb-1">Target</label><input name="target" value={formData.target} onChange={handleChange} required className="w-full p-2 border rounded" /></div>
+                                <div><label className="block text-sm font-medium text-slate-700 mb-1">Sumber Daya</label><input name="resources" value={formData.resources} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                <div><label className="block text-sm font-medium text-slate-700 mb-1">Program Kerja</label><input name="program" value={formData.program} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                <div><label className="block text-sm font-medium text-slate-700 mb-1">Formula</label><input name="formula" value={formData.formula} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Frekuensi</label>
+                                    <select name="freq" value={formData.freq} onChange={handleChange} className="w-full p-2 border rounded bg-white">
+                                        <option value="per bulan">per bulan</option>
+                                        <option value="per 3 bulan">per 3 bulan</option>
+                                        <option value="per tahun">per tahun</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="border-t border-slate-200 pt-4">
+                                <h4 className="text-sm font-bold text-slate-600 mb-3">Realisasi Bulanan</h4>
+                                <div className="grid grid-cols-6 gap-2">
+                                    {[...Array(12)].map((_, i) => (
+                                        <div key={i}>
+                                            <label className="text-xs text-slate-500 block mb-1">Bln {i+1}</label>
+                                            <input name={`m${i+1}`} value={formData[`m${i+1}`]} onChange={handleChange} className="w-full text-center text-sm p-1 border rounded" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex justify-end pt-4">
+                                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg flex items-center shadow-lg"><Save size={18} className="mr-2" />{isEditing ? "Simpan Perubahan" : "Simpan Data"}</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div className="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
+                        <div className="p-4 bg-slate-50 border-b border-slate-200"><h3 className="font-bold text-slate-700">Database KPI</h3></div>
+                        <div className="overflow-x-auto max-h-[500px]">
+                            <table className="w-full text-sm text-left">
+                                <thead className="text-xs text-slate-700 uppercase bg-slate-100">
+                                    <tr>
+                                        <th className="px-4 py-3">Sasaran</th><th className="px-4 py-3">Target</th><th className="px-4 py-3">PIC</th><th className="px-4 py-3 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.map((item) => (
+                                        <tr key={item.id} className="border-b hover:bg-slate-50">
+                                            <td className="px-4 py-3 font-medium">{item.sasaran}</td><td className="px-4 py-3">{item.target}</td><td className="px-4 py-3">{item.pic}</td>
+                                            <td className="px-4 py-3 text-right space-x-2">
+                                                <button onClick={() => handleEdit(item)} className="text-blue-600 border border-blue-200 px-2 py-1 rounded bg-blue-50 text-xs">Edit</button>
+                                                <button onClick={() => handleDelete(item.id)} className="text-red-600 border border-red-200 px-2 py-1 rounded bg-red-50 text-xs">Hapus</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 3. MAIN APP COMPONENT ---
+        const App = () => {
+            const [user, setUser] = useState(null); 
+            const [view, setView] = useState('dashboard');
+            const [data, setData] = useState(INITIAL_DATA);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+            // Load External Libs (SheetJS & PDF)
+            useEffect(() => {
+                const scripts = [
+                    "https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"
+                ];
+                scripts.forEach(src => {
+                    if(!document.querySelector(`script[src="${src}"]`)) {
+                        const script = document.createElement('script');
+                        script.src = src;
+                        script.async = true;
+                        document.body.appendChild(script);
+                    }
+                });
+            }, []);
+
+            const handleLogout = () => { setUser(null); setView('dashboard'); };
+
+            const navItems = [
+                { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                { id: 'data', label: 'Data Mentah', icon: TableIcon },
+                { id: 'admin', label: 'Input Admin', icon: Settings },
+            ];
+
+            if (!user && view === 'admin') return <Login onLogin={() => setUser('admin')} />;
+
+            return (
+                <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+                    <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col shadow-xl z-20`}>
+                        <div className="p-4 flex items-center justify-between border-b border-slate-700">
+                            {isSidebarOpen ? <div className="flex items-center space-x-2"><div className="bg-blue-500 p-1 rounded"><Boxes size={20} /></div><span className="font-bold text-lg tracking-tight truncate">SCM SYSTEM</span></div> : <div className="mx-auto bg-blue-500 p-2 rounded"><Boxes size={20} /></div>}
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white">{isSidebarOpen ? <X size={18} /> : <Menu size={18} />}</button>
+                        </div>
+                        <nav className="flex-1 py-6 px-3 space-y-2">
+                            {navItems.map((item) => (
+                                <button key={item.id} onClick={() => { if(item.id === 'admin' && !user) { setView('admin'); } else { setView(item.id); } }} className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors ${view === item.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><item.icon size={20} />{isSidebarOpen && <span>{item.label}</span>}</button>
+                            ))}
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"><Github size={20} />{isSidebarOpen && <span>GitHub Repo</span>}</a>
+                        </nav>
+                        <div className="p-4 border-t border-slate-700">
+                            {user ? <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition-colors"><LogOut size={20} />{isSidebarOpen && <span>Keluar</span>}</button> : <div className="text-xs text-center text-slate-500">{isSidebarOpen && "Guest Mode"}</div>}
+                        </div>
+                    </aside>
+                    
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative">
+                        <header className="bg-white shadow-sm p-4 sticky top-0 z-10 flex justify-between items-center shrink-0">
+                            <div><h2 className="text-xl font-semibold text-slate-800">{view === 'dashboard' && 'Dashboard SCM'}{view === 'data' && 'Data Mentah SCM'}{view === 'admin' && 'Panel Admin SCM'}</h2><p className="text-xs text-slate-500">Supply Chain Management - Sasaran Mutu</p></div>
+                            <div className="flex items-center space-x-4"><span className="text-sm text-slate-500">Periode: 2025</span>{user && <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full flex items-center"><CheckCircle2 size={12} className="mr-1" /> Admin Logged In</span>}</div>
+                        </header>
+                        
+                        <div className="flex-1 overflow-hidden p-6">
+                            {view === 'dashboard' && <DashboardView data={data} />}
+                            {view === 'data' && <DataTableView data={data} />}
+                            {view === 'admin' && <AdminPanel data={data} setData={setData} />}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        // --- RENDER APP ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
